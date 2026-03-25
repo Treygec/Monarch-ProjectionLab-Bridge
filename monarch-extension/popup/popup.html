@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Monarch → ProjectionLab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="popup.css"/>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-brand">
+    <div class="brand-icon">
+      <svg width="20" height="20" viewBox="0 0 128 128" fill="none">
+        <rect width="128" height="128" rx="24" fill="#0F1520"/>
+        <path d="M64 18 L22 64 L64 110 Z" fill="#F59E0B"/>
+        <path d="M64 18 L106 64 L64 110 Z" fill="#3B82F6"/>
+        <line x1="64" y1="18" x2="64" y2="110" stroke="#0F1520" stroke-width="3"/>
+        <circle cx="64" cy="64" r="12" fill="#0F1520"/>
+        <path d="M59 60 L69 60 L66 56" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <path d="M69 68 L59 68 L62 72" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+    </div>
+    <span class="brand-name">Monarch <span class="brand-arrow">→</span> ProjectionLab</span>
+  </div>
+  <div class="header-status">
+    <span class="status-dot" id="plStatus" title="ProjectionLab"></span>
+    <span class="status-dot monarch" id="monarchStatus" title="Monarch API"></span>
+    <button id="donateChip" class="donate-chip" title="Support development">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      Donate
+    </button>
+    <div id="accountChipWrap" class="account-chip-wrap hidden">
+      <button id="accountChip" class="account-chip" title="Monarch Bridge Account">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span id="accountChipLabel">Account</span>
+      </button>
+      <div id="accountDropdown" class="account-dropdown hidden">
+        <div id="accountDropdownSignedOut">
+          <div class="acct-dd-title">Monarch Bridge Account</div>
+          <p class="acct-dd-hint">Sign in or create an account to use the hosted service.</p>
+          <input id="acctDdEmail" type="email" class="text-input acct-dd-input" placeholder="Email" autocomplete="off"/>
+          <div class="acct-dd-pw-row">
+            <input id="acctDdPassword" type="password" class="text-input acct-dd-input" placeholder="Password" autocomplete="off"/>
+            <button class="icon-btn acct-dd-eye" id="acctDdTogglePw" title="Show/hide">👁</button>
+          </div>
+          <div class="acct-dd-btns">
+            <button class="btn btn-primary btn-sm" id="acctDdSignIn">Sign In</button>
+            <button class="btn btn-outline btn-sm" id="acctDdSignUp">Create Account</button>
+          </div>
+          <div id="acctDdStatus" class="status-line" style="margin-top:6px"></div>
+        </div>
+        <div id="accountDropdownSignedIn" class="hidden">
+          <div class="acct-dd-title">Monarch Bridge Account</div>
+          <div class="acct-dd-email" id="acctDdCurrentEmail"></div>
+          <div class="acct-dd-actions">
+            <button class="btn btn-sm btn-outline" id="acctDdBilling">Manage Billing</button>
+            <button class="btn btn-sm btn-ghost" id="acctDdSignOut">Sign Out</button>
+          </div>
+          <div id="acctDdSignedInStatus" class="status-line" style="margin-top:6px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="tab-bar">
+  <button class="tab active" data-tab="setup">Setup</button>
+  <button class="tab" data-tab="mapping">Mapping</button>
+  <button class="tab" data-tab="merge">Merge</button>
+  <button class="tab" data-tab="sync">Sync</button>
+  <button class="tab" data-tab="settings">Settings</button>
+</nav>
+
+<!-- ══════════════════════════════════════════════════════════
+     SETUP TAB
+══════════════════════════════════════════════════════════ -->
+<div class="tab-panel active" id="panel-setup">
+  <div class="section">
+    <h2 class="section-title">ProjectionLab Plugin API Key</h2>
+    <p class="section-hint">Find this in ProjectionLab → Account Settings → Plugins.</p>
+    <div class="input-row">
+      <input id="plApiKey" type="password" class="text-input mono"
+             placeholder="pl_key_…" autocomplete="off"/>
+      <button class="icon-btn" id="toggleApiKey" title="Show/hide">👁</button>
+    </div>
+    <div class="btn-row" style="align-items:center;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-primary" id="fetchPlAccounts">Fetch from PL</button>
+      <span id="plFetchStatus" class="status-line" style="margin:0"></span>
+      <button class="btn btn-sm btn-ghost" id="debugExportBtn" style="margin-left:auto">Debug: inspect raw export</button>
+    </div>
+    <div id="staleWarningRow" class="stale-warning-row hidden">
+      <span id="staleWarningText" class="stale-warning-text"></span>
+      <button class="btn btn-sm btn-danger" id="clearStaleMappings">Clear stale</button>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div id="firebaseAuthBanner" class="firebase-auth-banner hidden">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span id="firebaseAuthBannerText">Hosted mode — sign in to your Monarch Bridge account using the <strong>Account</strong> button in the header.</span>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Monarch API</h2>
+    <p class="section-hint" id="monarchCredentialsHint">Enter your Monarch Money credentials. These are stored locally in your browser and sent only to your proxy — never persisted on any server.</p>
+    <div class="input-row">
+      <input id="monarchEmail" type="email" class="text-input"
+             placeholder="Monarch email" autocomplete="off"/>
+    </div>
+    <div class="input-row">
+      <input id="monarchPassword" type="password" class="text-input"
+             placeholder="Monarch password" autocomplete="off"/>
+      <button class="icon-btn" id="toggleMonarchPassword" title="Show/hide">👁</button>
+    </div>
+
+    <div id="monarchUrlSection">
+    <p class="section-hint">Proxy URL <span style="color:var(--txt3)">(custom URLs will prompt for permission)</span></p>
+    <div class="input-row">
+      <input id="monarchApiUrl" type="text" class="text-input mono"
+             placeholder="http://localhost:47821"/>
+    </div>
+    <div id="monarchPermStatus" class="status-line"></div>
+    <div class="btn-row">
+      <button class="btn btn-outline" id="grantPermissionBtn" style="display:none">
+        🔑 Grant permission for this URL
+      </button>
+    </div>
+    </div>
+    <div class="btn-row" style="align-items:center;gap:10px">
+      <button class="btn btn-primary" id="fetchMonarchAccounts">Load from Monarch</button>
+      <span id="monarchFetchStatus" class="status-line" style="margin:0"></span>
+    </div>
+    <div id="mfaCodeRow" class="hidden" style="margin-top:10px">
+      <p class="section-hint" style="margin-bottom:6px">Enter the 6-digit code from your authenticator app:</p>
+      <div class="input-row">
+        <input id="monarchMfaCode" type="text" inputmode="numeric" class="text-input mono"
+               placeholder="000000" maxlength="6"
+               style="width:90px;text-align:center;letter-spacing:3px"/>
+        <button class="btn btn-primary" id="verifyMfaCode">Verify</button>
+      </div>
+      <div id="mfaVerifyStatus" class="status-line"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     MAPPING TAB
+══════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="panel-mapping">
+
+  <!-- Sub-tab bar -->
+  <div class="sub-tab-bar">
+    <button class="sub-tab active" data-sub="accounts">Accounts</button>
+    <button class="sub-tab" data-sub="budgets">Budgets</button>
+  </div>
+
+  <!-- ── Accounts sub-panel ── -->
+  <div id="sub-panel-accounts" class="sub-panel active">
+    <div class="mapping-toolbar">
+      <input class="search-input" id="mappingSearch" placeholder="Filter Monarch accounts…"/>
+      <button class="btn btn-sm btn-ghost" id="autoMapBtn">Auto-map by name</button>
+      <button class="btn btn-sm btn-outline" id="createAllBtn" disabled style="color:var(--amber);border-color:var(--amber)">✦ Create all unmapped</button>
+    </div>
+
+    <div class="mapping-legend">
+      <span>Monarch account</span>
+      <span style="color:var(--amber)">→</span>
+      <span>ProjectionLab account</span>
+      <span class="legend-save-group">
+        <span class="save-status" id="mappingSaveStatus"></span>
+        <button class="btn btn-sm btn-primary" id="saveMappings">💾 Save</button>
+      </span>
+    </div>
+
+    <div id="mappingList" class="mapping-list">
+      <div class="empty-state">Load accounts in Setup first</div>
+    </div>
+
+    <!-- Bulk Create Panel -->
+    <div id="bulkCreatePanel" class="bulk-create-panel hidden"></div>
+
+    <!-- Floating save button -->
+    <div id="floatingSaveBar" class="panel-floating-bar hidden">
+      <button id="floatingSaveBtn" class="btn btn-sm btn-primary">💾 Save</button>
+    </div>
+  </div>
+
+  <!-- ── Budgets sub-panel ── -->
+  <div id="sub-panel-budgets" class="sub-panel">
+    <div class="mapping-toolbar">
+      <input class="search-input" id="budgetSearch" placeholder="Filter budget categories…"/>
+    </div>
+    <div class="mapping-legend">
+      <span>Monarch budget category</span>
+      <span style="color:var(--amber)">→</span>
+      <span>PL plan expense</span>
+      <span class="legend-save-group">
+        <span class="save-status" id="budgetSaveStatus"></span>
+        <button class="btn btn-sm btn-primary" id="saveBudgetMappings">💾 Save</button>
+      </span>
+    </div>
+
+    <div id="budgetMappingList" class="mapping-list">
+      <div class="empty-state">Fetch Monarch accounts in Setup first</div>
+    </div>
+
+    <!-- Inline new-expense form for budget mapping tab -->
+    <div id="budgetMapNewExpenseForm" class="merge-create-form hidden" style="margin:8px 12px">
+      <div style="font-size:11px;color:var(--amber);font-weight:700;margin-bottom:6px">✦ New expense</div>
+      <div class="merge-create-row">
+        <label class="field-label">Expense Name</label>
+        <input id="budgetMapNewExpenseName" type="text" class="text-input" style="font-size:12px;padding:5px 8px" placeholder="e.g. Subscriptions"/>
+      </div>
+      <div class="merge-create-row" style="margin-top:6px">
+        <label class="field-label">Expense Type</label>
+        <select id="budgetMapNewExpenseType" class="select-input" style="font-size:12px;padding:5px 24px 5px 8px">
+          <option value="living-expenses" selected>Living Expenses</option>
+          <option value="health-care">Health Care</option>
+          <option value="debt">Debt</option>
+          <option value="charity">Charity</option>
+          <option value="dependent-support">Dependent Support</option>
+          <option value="wedding">Wedding (one-time)</option>
+          <option value="other">Other (one-time)</option>
+        </select>
+      </div>
+      <div class="merge-create-row" style="margin-top:6px">
+        <label class="field-label">Frequency</label>
+        <div id="budgetMapFreqRow"></div>
+      </div>
+      <div class="merge-create-row" style="margin-top:6px">
+        <label class="field-label">Plans <span class="field-hint">check plans to add this expense to</span></label>
+        <div id="budgetMapNewExpensePlanList" class="checklist" style="max-height:140px;overflow-y:auto;margin-top:4px"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-sm btn-primary" id="budgetMapConfirmNewExpense">Add</button>
+        <button class="btn btn-sm btn-ghost" id="budgetMapCancelNewExpense">Cancel</button>
+      </div>
+      <div id="budgetMapNewExpenseContext" style="font-size:10px;color:var(--txt3);margin-top:4px"></div>
+    </div>
+
+    <div id="floatingBudgetSaveBar" class="panel-floating-bar hidden">
+      <button id="floatingBudgetSaveBtn" class="btn btn-sm btn-primary">💾 Save</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     MERGE TAB
+══════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="panel-merge">
+
+  <!-- Legend bar with inline buttons — mirrors mapping/sync pages -->
+  <div class="mapping-legend">
+    <span>Merge groups</span>
+    <span class="legend-save-group">
+      <button class="btn btn-sm merge-fab--account" id="addMergeGroup" style="background:var(--amber);color:#0B0F1A;border:none">⇄ Account</button>
+      <button class="btn btn-sm merge-fab--budget" id="addBudgetMergeGroup" style="background:var(--blue);color:#fff;border:none">💰 Budget</button>
+    </span>
+  </div>
+
+  <!-- Combined merge list -->
+  <div id="mergeGroupList" class="merge-list"></div>
+  <div id="budgetMergeGroupList" style="display:none"></div>
+
+  <!-- Floating buttons — appear when legend scrolls out of view -->
+  <div class="merge-fab-row" id="mergeFabRow">
+    <button class="merge-fab merge-fab--account hidden" id="floatingAccountMergeBtn">⇄ Account Merge</button>
+    <button class="merge-fab merge-fab--budget hidden" id="floatingBudgetMergeBtn">💰 Budget Merge</button>
+  </div>
+
+  <!-- Budget merge builder -->
+  <div id="budgetMergeBuilder" class="merge-builder hidden">
+    <div class="builder-header">
+      <span class="builder-title" id="budgetMergeBuilderTitle">New Budget Merge</span>
+      <span id="budgetMergeTotalDisplay" class="builder-running-total builder-running-total--center"></span>
+      <button class="btn btn-sm btn-primary" id="saveBudgetMergeGroup">💾 Save</button>
+      <button class="icon-btn" id="closeBudgetMergeBuilder">✕</button>
+    </div>
+    <div class="builder-body" id="budgetMergeBuilderBody">
+      <div class="field-label">Merge Group Name</div>
+      <input id="budgetMergeName" type="text" class="text-input" placeholder="e.g. Home Expenses"/>
+
+      <div class="field-label" style="margin-top:10px">
+        PL Expense to update
+        <span class="field-hint">which expense receives the combined amount</span>
+      </div>
+      <select id="budgetMergeExpenseSel" class="select-input"></select>
+
+      <!-- Shown when "create new" is selected -->
+      <div id="budgetMergeNewExpenseForm" class="merge-create-form hidden">
+        <div class="merge-create-row">
+          <label class="field-label">Expense Name</label>
+          <input id="budgetMergeNewExpenseName" type="text" class="text-input" style="font-size:12px;padding:5px 8px" placeholder="e.g. Subscriptions"/>
+        </div>
+        <div class="merge-create-row" style="margin-top:4px">
+          <label class="field-label">Expense Type</label>
+          <select id="budgetMergeNewExpenseType" class="select-input" style="font-size:12px;padding:5px 24px 5px 8px">
+            <option value="living-expenses" selected>Living Expenses</option>
+            <option value="health-care">Health Care</option>
+            <option value="debt">Debt</option>
+            <option value="charity">Charity</option>
+            <option value="dependent-support">Dependent Support</option>
+            <option value="wedding">Wedding (one-time)</option>
+            <option value="other">Other (one-time)</option>
+          </select>
+        </div>
+        <div class="merge-create-row" style="margin-top:4px">
+          <label class="field-label">Frequency</label>
+          <div id="budgetMergeFreqRow"></div>
+        </div>
+      </div>
+
+      <div id="budgetMergePlanSection" class="hidden">
+        <div class="field-label" style="margin-top:10px">
+          Plans
+          <span class="field-hint">which plans should receive this expense</span>
+        </div>
+        <div id="budgetMergePlanList" class="checklist"></div>
+      </div>
+
+      <div class="field-label" style="margin-top:10px">
+        Value Source
+        <span class="field-hint">override the global default for this group</span>
+      </div>
+      <label class="bgt-merge-source-toggle">
+        <input type="checkbox" id="budgetMergeSourceAllToggle" checked/>
+        <span>Apply one setting to all categories</span>
+      </label>
+      <div id="budgetMergeSourceAllControls" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px">
+        <select id="budgetMergeSourceMode" class="select-input" style="width:auto">
+          <option value="">Default</option>
+          <option value="planned">Planned</option>
+          <option value="actual">Actual</option>
+        </select>
+        <span id="budgetMergeActualOpts" class="hidden" style="display:flex;gap:6px;align-items:center">
+          <input id="budgetMergeLookback" type="number" class="text-input" min="1" max="12"
+                 style="width:44px;text-align:center;padding:4px 6px"/>
+          <span style="font-size:11px;color:var(--txt3)">mo</span>
+          <select id="budgetMergeAggSel" class="select-input" style="font-size:12px">
+            <option value="average">avg</option>
+            <option value="median">median</option>
+          </select>
+        </span>
+      </div>
+
+      <div class="field-label" style="margin-top:10px">
+        Budget Categories
+        <span class="field-hint">Select 2 or more to combine</span>
+      </div>
+      <div id="budgetMergeCatList" class="checklist budget-merge-cat--all-mode"></div>
+    </div>
+    <!-- Floating bar: total + save — visible when header scrolls out of view -->
+    <div id="budgetMergeFloatingBar" class="builder-floating-bar hidden">
+      <span id="budgetMergeFloatingTotal" class="builder-running-total"></span>
+      <button class="btn btn-sm btn-primary" id="floatingBudgetMergeSaveBtn">💾 Save</button>
+    </div>
+  </div>
+
+  <!-- Inline merge builder (hidden until needed) -->
+  <div id="mergeBuilder" class="merge-builder hidden">
+    <div class="builder-header">
+      <span class="builder-title" id="mergeBuilderTitle">New Merge Group</span>
+      <span id="mergeTotalDisplay" class="builder-running-total builder-running-total--center"></span>
+      <button class="btn btn-sm btn-primary" id="saveMergeGroup">💾 Save</button>
+      <button class="icon-btn" id="closeMergeBuilder">✕</button>
+    </div>
+    <div class="builder-body" id="mergeBuilderBody">
+      <label class="field-label">PL Account to update</label>
+      <select id="mergePlTarget" class="select-input"></select>
+
+      <!-- Sub-form shown when "Create new PL account" is selected -->
+      <div id="mergeCreateForm" class="merge-create-form hidden">
+        <div class="merge-create-row">
+          <label class="field-label">Name</label>
+          <input id="mergeCreateName" type="text" class="text-input" style="font-size:12px;padding:5px 8px" placeholder="e.g. House"/>
+        </div>
+        <div class="merge-create-row">
+          <label class="field-label">Category</label>
+          <select id="mergeCreateCategory" class="select-input" style="font-size:12px;padding:5px 24px 5px 8px">
+            <option value="savings">Savings / Cash</option>
+            <option value="investment">Investment</option>
+            <option value="asset" selected>Real Asset</option>
+            <option value="debt">Unsecured Debt</option>
+          </select>
+        </div>
+        <div id="mergeCreateTypeRow" class="merge-create-row hidden">
+          <label class="field-label">Account Type</label>
+          <select id="mergeCreateType" class="select-input" style="font-size:12px;padding:5px 24px 5px 8px"></select>
+        </div>
+        <div id="mergeCreatePaymentRow" class="merge-create-row hidden">
+          <label class="field-label">Payment Status</label>
+          <select id="mergeCreatePaymentStatus" class="select-input" style="font-size:12px;padding:5px 24px 5px 8px">
+            <option value="financed" selected>Financed</option>
+            <option value="pay-in-full">Fully Owned</option>
+          </select>
+        </div>
+        <div id="mergeManualOverrides" class="hidden">
+          <div class="field-label" style="margin-top:6px;margin-bottom:4px">
+            Unmapped field values
+            <span class="field-hint">set values for fields not covered by a Monarch account</span>
+          </div>
+          <div id="mergeOverrideAmount" class="merge-override-row">
+            <span class="merge-override-label">Current Value</span>
+            <input type="number" id="mergeValAmount" class="text-input" style="font-size:12px;padding:4px 8px" placeholder="0" min="0"/>
+          </div>
+          <div id="mergeOverrideBalance" class="merge-override-row">
+            <span class="merge-override-label">Loan Balance</span>
+            <input type="number" id="mergeValBalance" class="text-input" style="font-size:12px;padding:4px 8px" placeholder="0" min="0"/>
+          </div>
+          <div id="mergeOverrideInitialValue" class="merge-override-row">
+            <span class="merge-override-label">Purchase Price</span>
+            <input type="number" id="mergeValInitialValue" class="text-input" style="font-size:12px;padding:4px 8px" placeholder="0" min="0"/>
+          </div>
+        </div>
+      </div>
+
+      <!-- Source account list -->
+      <label class="field-label" style="margin-top:10px">
+        Monarch accounts
+        <span id="mergeSourceHint" class="field-hint"></span>
+      </label>
+      <div id="mergeSourceList" class="checklist"></div>
+
+
+    </div>
+    <!-- Floating bar: total + save -->
+    <div id="mergeFloatingBar" class="builder-floating-bar hidden">
+      <span id="mergeFloatingTotal" class="builder-running-total"></span>
+      <button class="btn btn-sm btn-primary" id="floatingMergeSaveBtn">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SYNC TAB
+══════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="panel-sync">
+  <div class="section">
+    <h2 class="section-title">Ready to Sync</h2>
+    <p class="section-hint">Preview what will be sent to ProjectionLab, then push it.</p>
+  </div>
+
+  <div class="sync-legend">
+    <span>Sync plan</span>
+    <span class="legend-save-group">
+      <span class="save-status" id="syncSaveStatus"></span>
+      <button class="btn btn-sm btn-ghost" id="previewSyncBtn">↺ Refresh Preview</button>
+      <button class="btn btn-sm btn-success" id="runSyncBtn" disabled>⚡ Push to ProjectionLab</button>
+    </span>
+  </div>
+
+  <div id="syncPreviewList" class="sync-list">
+    <div class="empty-state">Nothing mapped yet — go to Mapping tab first.</div>
+  </div>
+
+  <div id="floatingPushBar" class="panel-floating-bar hidden">
+    <button id="floatingPushBtn" class="btn btn-sm btn-success" disabled>⚡ Push to ProjectionLab</button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════
+     SETTINGS TAB
+══════════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="panel-settings">
+  <div class="section">
+    <h2 class="section-title">Connection Mode</h2>
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-label">Use Hosted Service</div>
+        <div class="setting-desc">
+          Connect via the Monarch Bridge cloud service (subscription required).
+          When off, connect to your self-hosted Docker proxy at the URL configured in Setup.
+        </div>
+      </div>
+      <label class="toggle-wrap">
+        <input type="checkbox" id="settingHostedMode"/>
+        <span class="toggle-track">
+          <span class="toggle-thumb"></span>
+        </span>
+      </label>
+    </div>
+  </div>
+
+  <div class="section" style="border-top:1px solid var(--border)">
+    <h2 class="section-title">Display</h2>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-label">Show Hidden Accounts</div>
+        <div class="setting-desc">
+          When off, accounts marked as hidden in Monarch are excluded from all lists and mappings.
+          When on, all accounts are shown regardless of their hidden status.
+        </div>
+      </div>
+      <label class="toggle-wrap">
+        <input type="checkbox" id="settingShowHidden"/>
+        <span class="toggle-track">
+          <span class="toggle-thumb"></span>
+        </span>
+      </label>
+    </div>
+
+  </div>
+
+  <div class="section" style="border-top:1px solid var(--border)">
+    <h2 class="section-title">Sync</h2>
+
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-label">Write Monarch Account Mapping to ProjectionLab Notes</div>
+        <div class="setting-desc">
+          When on, each sync writes a <em>Monarch</em> section to the account notes in ProjectionLab
+          showing which Monarch accounts are mapped to it. Existing notes are preserved.
+          When off, notes are never written or updated.
+        </div>
+      </div>
+      <label class="toggle-wrap">
+        <input type="checkbox" id="settingWriteNotes"/>
+        <span class="toggle-track">
+          <span class="toggle-thumb"></span>
+        </span>
+      </label>
+    </div>
+
+  </div>
+
+  <div class="section" style="border-top:1px solid var(--border)">
+    <h2 class="section-title">Monarch Authentication</h2>
+    <p class="section-hint">
+      Auto-generate 2FA codes so you don't have to enter them manually.
+      Paste your TOTP secret from your authenticator app setup.
+    </p>
+
+    <div class="mfa-bar">
+      <label class="toggle-wrap mfa-bar-toggle">
+        <input type="checkbox" id="settingMfaEnabled"/>
+        <span class="toggle-track">
+          <span class="toggle-thumb"></span>
+        </span>
+      </label>
+      <div class="mfa-bar-secret" id="mfaSecretRow">
+        <input type="password" id="settingMfaSecret" class="text-input mfa-bar-input"
+               placeholder="TOTP secret key" autocomplete="off"
+               title="Your TOTP secret is stored locally in your browser and is never kept on our servers for more than 10 minutes before being deleted."/>
+        <button class="icon-btn" id="toggleMfaSecret" title="Show/hide">👁</button>
+      </div>
+      <button id="btnRefreshMonarchSession" class="btn btn-sm btn-ghost mfa-bar-refresh">
+        Refresh Session
+      </button>
+      <span id="statusMfaRefresh" class="mfa-bar-status"></span>
+    </div>
+  </div>
+
+  <div class="section" style="border-top:1px solid var(--border)">
+    <h2 class="section-title">Backup &amp; Restore</h2>
+    <p class="section-hint">
+      Export your mappings, merge groups, and settings to a file — or restore from a previous backup.
+    </p>
+    <div class="backup-row">
+      <div class="backup-local">
+        <button id="btnExportBackup" class="btn btn-sm btn-ghost">⬇ Export to File</button>
+        <button id="btnImportBackup" class="btn btn-sm btn-ghost">⬆ Import from File</button>
+        <input type="file" id="importBackupFile" accept=".json" style="display:none"/>
+      </div>
+      <div class="backup-cloud hidden" id="cloudBackupSection">
+        <span class="backup-divider">│</span>
+        <button id="btnCloudSave" class="btn btn-sm btn-primary">☁ Save to Cloud</button>
+        <span id="cloudBackupStatus" class="backup-status"></span>
+      </div>
+    </div>
+    <div class="cv-name-bar hidden" id="cvNameBar">
+      <input type="text" id="cvNameInput" class="text-input cv-name-input" placeholder="Backup name"/>
+      <button id="cvNameConfirm" class="btn btn-sm btn-primary">Save</button>
+      <button id="cvNameCancel" class="btn btn-sm btn-ghost">Cancel</button>
+    </div>
+    <div class="cloud-version-list hidden" id="cloudVersionList"></div>
+  </div>
+
+  <div class="section" style="border-top:1px solid var(--border)">
+    <h2 class="section-title">Budget Value Source</h2>
+    <p class="section-hint">
+      Global default for how budget amounts are calculated. Individual categories and merge groups can override these values in the Mapping and Merge tabs.
+    </p>
+
+    <div class="budget-source-bar">
+      <div class="bsb-group">
+        <label class="bsb-label">Source</label>
+        <select id="settingBudgetMode" class="select-input bsb-select">
+          <option value="planned">Planned</option>
+          <option value="actual">Actual</option>
+        </select>
+      </div>
+      <div class="bsb-group" id="budgetActualOptions">
+        <label class="bsb-label">Lookback</label>
+        <div class="bsb-inline">
+          <input id="settingBudgetLookback" type="number" class="text-input bsb-num" min="1" max="12"/>
+          <span class="bsb-unit">mo</span>
+        </div>
+      </div>
+      <div class="bsb-group" id="budgetAggGroup">
+        <label class="bsb-label">Aggregation</label>
+        <select id="settingBudgetAggregation" class="select-input bsb-select">
+          <option value="average">Average</option>
+          <option value="median">Median</option>
+        </select>
+      </div>
+    </div>
+    <p class="section-hint" style="margin-top:8px;font-size:11px;color:var(--txt3)">
+      <strong>Planned</strong> uses your budgeted amounts.
+      <strong>Actual</strong> averages real spending over the lookback window.
+      These defaults apply everywhere unless overridden.
+    </p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="popup.js"></script>
+<!-- ── Confirmation modal ──────────────────────────────────── -->
+<div id="confirmModal" class="confirm-modal hidden" role="dialog" aria-modal="true">
+  <div class="confirm-modal-box">
+    <div class="confirm-modal-title" id="confirmModalTitle"></div>
+    <div class="confirm-modal-body" id="confirmModalBody"></div>
+    <div class="confirm-modal-actions">
+      <button class="btn btn-sm btn-ghost" id="confirmModalCancel">Cancel</button>
+      <button class="btn btn-sm btn-primary" id="confirmModalOk">Continue</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

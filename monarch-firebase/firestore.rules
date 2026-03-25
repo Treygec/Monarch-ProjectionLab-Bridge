@@ -1,0 +1,32 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // MFA sessions — short-lived, TTL via expireAt field
+    // Only the Cloud Function (admin SDK) can read/write these.
+    match /mfa_sessions/{sessionId} {
+      allow read, write: if false;
+    }
+
+    // Monarch tokens — one doc per authenticated user
+    // Only the authenticated user can read their own token.
+    // Cloud Functions (admin SDK) write these.
+    match /monarch_tokens/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // Subscriptions — written by Stripe webhook Cloud Function
+    // Only the authenticated user can read their own subscription.
+    match /subscriptions/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // Deny everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

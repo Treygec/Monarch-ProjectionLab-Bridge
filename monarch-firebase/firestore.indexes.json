@@ -1,0 +1,13 @@
+{
+  "indexes": [],
+  "fieldOverrides": [
+    {
+      "collectionGroup": "mfa_sessions",
+      "fieldPath": "expireAt",
+      "ttlPolicy": {
+        "state": "ACTIVE"
+      },
+      "indexes": []
+    }
+  ]
+}

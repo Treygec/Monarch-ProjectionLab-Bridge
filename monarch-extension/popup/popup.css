@@ -1,0 +1,1424 @@
+/* ============================================================
+   Monarch → PL Bridge  —  CSS  v2
+   ============================================================ */
+:root {
+  --bg0:#0F1520; --bg1:#172030; --bg2:#1E2B40; --bg3:#283A54;
+  --border:#2D3F5C; --border2:#3A5070;
+  --amber:#F59E0B; --amber-bg:rgba(245,158,11,.1);
+  --blue:#3B82F6;  --blue-bg:rgba(59,130,246,.1);
+  --green:#10B981; --green-bg:rgba(16,185,129,.1);
+  --red:#EF4444;
+  --txt1:#F8FAFC; --txt2:#E2E8F0; --txt3:#A0AFBF;
+  --font-sans:'DM Sans',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+  --r:6px; --t:140ms ease;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  width:780px;min-height:560px;max-height:820px;
+  display:flex;flex-direction:column;
+  background:var(--bg0);color:var(--txt1);
+  font-family:var(--font-sans);font-size:14px;overflow:hidden;
+}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* Header */
+.app-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px;background:var(--bg1);
+  border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.header-brand{display:flex;align-items:center;gap:10px}
+.brand-icon{
+  width:30px;height:30px;display:flex;align-items:center;justify-content:center;
+  background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);
+}
+.brand-name{font-family:var(--font-mono);font-size:12px;font-weight:600;letter-spacing:.05em;color:var(--txt1)}
+.brand-arrow{color:var(--amber);margin:0 3px}
+.header-status{display:flex;gap:8px;align-items:center}
+.status-dot{
+  width:8px;height:8px;border-radius:50%;background:var(--txt3);
+  transition:background var(--t),box-shadow var(--t);
+}
+.status-dot.ready{background:var(--green);box-shadow:0 0 8px var(--green)}
+.status-dot.error{background:var(--red)}
+
+/* Donate chip */
+.donate-chip{
+  display:flex;align-items:center;gap:4px;
+  background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);
+  padding:3px 8px 3px 6px;cursor:pointer;color:var(--txt2);
+  font-family:var(--font-sans);font-size:11px;font-weight:500;
+  transition:background var(--t),border-color var(--t),color var(--t);
+}
+.donate-chip:hover{background:var(--bg3);border-color:#E879A0;color:#E879A0}
+.donate-chip:hover svg{stroke:#E879A0}
+.donate-chip.hidden{display:none}
+
+/* Account chip + dropdown */
+.account-chip-wrap{position:relative}
+.account-chip{
+  display:flex;align-items:center;gap:4px;
+  background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);
+  padding:3px 8px 3px 6px;cursor:pointer;color:var(--txt2);
+  font-family:var(--font-sans);font-size:11px;font-weight:500;
+  transition:background var(--t),border-color var(--t);
+}
+.account-chip:hover{background:var(--bg3);border-color:var(--amber)}
+.account-chip.signed-in{border-color:var(--green);color:var(--green)}
+.account-chip.signed-in:hover{border-color:var(--green);background:var(--bg3)}
+.account-dropdown{
+  position:absolute;top:calc(100% + 6px);right:0;z-index:100;
+  width:280px;background:var(--bg1);border:1px solid var(--border2);
+  border-radius:var(--r);padding:14px;
+  box-shadow:0 8px 24px rgba(0,0,0,.5);
+}
+.acct-dd-title{font-size:12px;font-weight:600;color:var(--txt1);margin-bottom:6px}
+.acct-dd-hint{font-size:11px;color:var(--txt3);margin-bottom:10px;line-height:1.4}
+.acct-dd-input{font-size:12px;padding:6px 8px;width:100%;margin-bottom:6px}
+.acct-dd-pw-row{display:flex;gap:4px;align-items:center}
+.acct-dd-pw-row .acct-dd-input{margin-bottom:0;flex:1}
+.acct-dd-eye{font-size:12px;flex-shrink:0}
+.acct-dd-btns{display:flex;gap:6px;margin-top:8px}
+.acct-dd-email{font-size:12px;color:var(--txt2);margin-bottom:8px;word-break:break-all}
+.acct-dd-actions{display:flex;gap:6px}
+.firebase-auth-banner{
+  display:flex;align-items:center;gap:8px;
+  margin:0 16px 4px;padding:6px 12px;
+  background:var(--blue-bg);border:1px solid rgba(59,130,246,.25);border-radius:var(--r);
+  font-size:11px;color:var(--txt2);line-height:1.4;
+}
+.firebase-auth-banner svg{flex-shrink:0;color:var(--blue)}
+.firebase-auth-banner.signed-in{
+  background:var(--green-bg);border-color:rgba(16,185,129,.25);
+}
+.firebase-auth-banner.signed-in svg{color:var(--green)}
+
+/* Tabs */
+.tab-bar{display:flex;background:var(--bg1);border-bottom:1px solid var(--border);flex-shrink:0}
+.tab{
+  flex:1;padding:9px 4px;background:none;border:none;
+  border-bottom:2px solid transparent;
+  color:var(--txt2);font-family:var(--font-sans);font-size:12px;font-weight:600;
+  text-transform:uppercase;letter-spacing:.05em;cursor:pointer;transition:all var(--t);
+}
+.tab:hover{color:var(--txt2);background:var(--bg2)}
+.tab.active{color:var(--amber);border-bottom-color:var(--amber);background:var(--amber-bg)}
+
+/* Panels */
+.tab-panel{display:none;flex-direction:column;flex:1;overflow-y:auto}
+
+.tab-panel.active{display:flex}
+
+/* Sections */
+.section{padding:10px 16px;display:flex;flex-direction:column;gap:6px}
+.section-title{font-size:13px;font-weight:700;color:var(--txt1)}
+.section-hint{font-size:12px;color:var(--txt2);line-height:1.4}
+.section-hint code{
+  font-family:var(--font-mono);font-size:11px;
+  background:var(--bg2);padding:1px 5px;border-radius:3px;color:var(--amber);
+}
+.divider{height:1px;background:var(--border);flex-shrink:0}
+
+/* Inputs */
+.text-input,.select-input{
+  flex:1;padding:7px 10px;
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r);color:var(--txt1);
+  font-family:var(--font-sans);font-size:13px;outline:none;
+  transition:border-color var(--t);
+}
+.text-input:focus,.select-input:focus{border-color:var(--blue)}
+.text-input.mono{font-family:var(--font-mono);font-size:11px;letter-spacing:.04em}
+.select-input{
+  cursor:pointer;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394A3B8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;
+}
+.select-input option{background:var(--bg2)}
+.input-row{display:flex;gap:6px;align-items:center}
+
+/* Buttons */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  padding:7px 14px;border:1px solid transparent;border-radius:var(--r);
+  font-family:var(--font-sans);font-size:12px;font-weight:600;
+  cursor:pointer;transition:all var(--t);white-space:nowrap;
+}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-primary{background:var(--amber);color:#0B0F1A}
+.btn-primary:hover:not(:disabled){background:#FBBF24;box-shadow:0 0 14px rgba(245,158,11,.35)}
+.btn-success{background:var(--green);color:#0B0F1A}
+.btn-success:hover:not(:disabled){background:#34D399;box-shadow:0 0 14px rgba(16,185,129,.35)}
+.btn-outline{background:transparent;color:var(--txt1);border-color:var(--border2)}
+.btn-outline:hover:not(:disabled){color:var(--txt1);border-color:var(--blue);background:var(--blue-bg)}
+.btn-ghost{background:transparent;color:var(--txt1)}
+.btn-ghost:hover:not(:disabled){color:var(--txt1);background:var(--bg2)}
+.btn-sm{padding:5px 11px;font-size:12px}
+.btn-full{width:100%}
+.btn-danger{background:transparent;color:var(--red);border-color:rgba(239,68,68,.3)}
+.btn-danger:hover{background:rgba(239,68,68,.1)}
+.icon-btn{
+  width:32px;height:32px;background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r);color:var(--txt2);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:14px;flex-shrink:0;transition:all var(--t);
+}
+.icon-btn:hover{color:var(--txt1);border-color:var(--border2);background:var(--bg3)}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+
+/* Status line */
+.status-line{font-family:var(--font-mono);font-size:12px;min-height:18px;color:var(--txt2)}
+.status-line.ok{color:var(--green)}
+.status-line.err{color:var(--red)}
+.status-line.loading{color:var(--amber)}
+
+/* Mapping tab */
+.mapping-toolbar{
+  display:flex;gap:8px;align-items:center;
+  padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;
+
+}
+.search-input{
+  flex:1;padding:6px 10px;background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r);color:var(--txt1);font-family:var(--font-sans);font-size:12px;outline:none;
+  transition:border-color var(--t);
+}
+.search-input:focus{border-color:var(--blue)}
+.search-input::placeholder{color:var(--txt2)}
+.mapping-legend{
+  display:flex;gap:8px;align-items:center;padding:6px 16px;
+  font-size:12px;color:var(--txt2);border-bottom:1px solid var(--border);flex-shrink:0;
+  justify-content:space-between;
+
+}
+.legend-save-group{
+  display:flex;align-items:center;gap:8px;margin-left:auto;
+}
+.mapping-list{overflow-y:auto;display:flex;flex-direction:column;padding:6px 8px;gap:4px}
+.map-row{
+  display:grid;grid-template-columns:1fr 24px 1fr 28px;
+  align-items:center;gap:6px;padding:7px 10px;
+  background:var(--bg1);border:1px solid var(--border);
+  border-radius:var(--r);animation:fadeIn 150ms ease;
+}
+.map-row:hover{border-color:var(--border2)}
+.map-row.merged{border-left:3px solid var(--amber)}
+.map-row.unmapped{opacity:.5}
+.map-source{display:flex;flex-direction:column;gap:1px;min-width:0}
+.map-source-name{
+  font-size:12px;font-weight:600;color:var(--txt1);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.map-source-bal{font-family:var(--font-mono);font-size: 12px;color:var(--txt2)}
+.map-arrow{color:var(--amber);text-align:center;font-size:14px}
+.map-dest{min-width:0}
+.map-remove{
+  width:22px;height:22px;background:none;border:none;
+ color: var(--txt2);cursor:pointer;border-radius:3px;
+  transition:all var(--t);font-size:14px;
+}
+.map-remove:hover{color:var(--red);background:rgba(239,68,68,.1)}
+.map-info-icon{
+  width:22px;height:22px;display:flex;align-items:center;justify-content:center;
+  font-size:14px;color:var(--txt3);cursor:help;flex-shrink:0;
+}
+
+/* Merge tab */
+.merge-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;padding:8px 16px;gap:8px}
+.merge-card{
+  background:var(--bg1);border:1px solid var(--border);
+  border-left:3px solid var(--amber);border-radius:var(--r);
+  animation:fadeIn 150ms ease;
+}
+.merge-card-header{display:flex;justify-content:space-between;align-items:center;padding:9px 12px}
+.merge-card-title{font-size:13px;font-weight:700;color:var(--txt1)}
+.merge-card-bal{font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--green)}
+.merge-card-body{padding:0 12px 8px;display:flex;flex-direction:column;gap:3px}
+.merge-card-item{display:flex;justify-content:space-between;font-size:11px;color:var(--txt2)}
+.merge-card-item-name{color:var(--txt1)}
+.merge-card-item-bal{font-family:var(--font-mono);font-size:12px;color:var(--txt2)}
+.merge-card-actions{display:flex;gap:6px;padding:6px 12px;border-top:1px solid var(--border)}
+
+/* Merge builder */
+.merge-builder{
+  margin:8px 12px;background:var(--bg2);border:1px solid var(--border2);
+  border-radius:var(--r);overflow:hidden;animation:fadeIn 150ms ease;
+  display:flex;flex-direction:column;
+  /* Flex-grow so it fills the panel; builder-body scrolls inside */
+  flex:1;min-height:0;
+}
+.merge-builder.hidden{display:none}
+.builder-header{
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+  padding:10px 12px;background:var(--bg3);border-bottom:1px solid var(--border);
+  font-weight:700;color:var(--txt1);
+  flex-shrink:0;
+  position:relative; /* anchor for centered total */
+}
+.builder-title { flex:1; }
+
+/* ── Builder header running total ───────────────────────────── */
+.builder-running-total {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--green);
+  white-space: nowrap;
+  transition: opacity 150ms ease;
+}
+.builder-running-total--center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.builder-body{
+  padding:12px;display:flex;flex-direction:column;gap:8px;
+  overflow-y:auto;flex:1;min-height:0;
+}
+.builder-footer{
+  display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);
+  flex-shrink:0;  /* always visible, never pushed off-screen */
+  background:var(--bg2);
+}
+.field-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--txt2)}
+.checklist{
+  background:var(--bg1);border:1px solid var(--border);border-radius:var(--r);
+  max-height:320px;overflow-y:auto;display:flex;flex-direction:column;
+}
+
+
+.check-item{
+  display:flex;align-items:center;gap:8px;padding:6px 10px;
+  cursor:pointer;transition:background var(--t);
+}
+.check-item:hover{background:var(--bg3)}
+.check-item input[type=checkbox]{accent-color:var(--amber)}
+.check-item-name{flex:1;font-size:13px;color:var(--txt1)}
+.check-item-bal{font-family:var(--font-mono);font-size:11px;color:var(--txt2)}
+
+/* Budget merge checklist items — same layout as check-item */
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: background var(--t);
+  font-size: 12px;
+}
+.checklist-item:hover { background: var(--bg3); }
+.checklist-item input[type=checkbox] { accent-color: var(--amber); flex-shrink: 0; }
+.checklist-item-name { flex: 1; color: var(--txt1); font-size:12px; }
+.checklist-item-bal { font-family: var(--font-mono); font-size: 11px; color: var(--txt2); white-space: nowrap; }
+.checklist-item.disabled { opacity: 0.4; cursor: not-allowed; }
+.checklist-group { display: flex; flex-direction: column; }
+
+
+/* Sync tab */
+.sync-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;padding:8px;gap:4px}
+.sync-row{
+  display:grid;grid-template-columns:1fr 24px 1fr;
+  align-items:center;gap:8px;padding:9px 12px;
+  background:var(--bg1);border:1px solid var(--border);border-radius:var(--r);
+  animation:fadeIn 150ms ease;
+}
+/* Type-based left border (default state only — status colors override) */
+.sync-row.pending[data-item-kind="account"]{border-left:3px solid var(--amber)}
+.sync-row.pending[data-item-kind="budget"]{border-left:3px solid var(--blue)}
+.sync-row.pending{border-left:3px solid var(--txt3)}  /* fallback */
+.sync-row.pushing{border-left:3px solid var(--amber)}
+.sync-row.done{border-left:3px solid var(--green)}
+.sync-row.failed{border-left:3px solid var(--red)}
+.sync-source{display:flex;flex-direction:column;gap:2px}
+.sync-source-name{font-size:12px;font-weight:600;color:var(--txt1)}
+.sync-source-ids{font-family:var(--font-mono);font-size:11px;color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sync-arrow{color:var(--amber);text-align:center}
+.sync-dest{display:flex;flex-direction:column;gap:2px;align-items:flex-end}
+.sync-dest-name{font-size:12px;color:var(--txt2)}
+.sync-dest-bal{font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--green)}
+.sync-status-dot{
+  width:8px;height:8px;border-radius:50%;background:var(--txt3);
+  display:inline-block;margin-right:4px;
+}
+
+/* Sticky footer */
+.sticky-footer{
+  padding:10px 12px;display:flex;flex-direction:column;gap:6px;
+  border-top:1px solid var(--border);flex-shrink:0;
+  background:var(--bg0);
+}
+
+/* Empty state */
+.empty-state{
+  padding:32px;text-align:center;color:var(--txt2);font-size:13px;
+  flex:1;display:flex;align-items:center;justify-content:center;
+}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:10px;left:50%;
+  transform:translateX(-50%) translateY(16px);
+  background:var(--bg3);border:1px solid var(--border2);
+  border-radius:var(--r);padding:7px 16px;
+  font-family:var(--font-mono);font-size:11px;color:var(--txt1);
+  opacity:0;pointer-events:none;transition:all 250ms ease;
+  white-space:nowrap;z-index:100;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{color:var(--green);border-color:rgba(16,185,129,.3)}
+.toast.err{color:var(--red);border-color:rgba(239,68,68,.3)}
+
+/* Spinner */
+.spin{
+  width:12px;height:12px;border:2px solid rgba(245,158,11,.2);
+  border-top-color:var(--amber);border-radius:50%;
+  animation:spin 600ms linear infinite;display:inline-block;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+
+/* ── Settings tab ────────────────────────────────────────────── */
+.setting-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.setting-row:last-child { border-bottom: none; }
+
+.setting-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.setting-label { font-size: 13px; font-weight: 600; color: var(--txt1); }
+.setting-desc { font-size: 12px; color: var(--txt2); line-height: 1.5; }
+
+/* Toggle switch */
+.toggle-wrap { position: relative; display: inline-flex; cursor: pointer; flex-shrink: 0; margin-top: 2px; }
+.toggle-wrap input { position: absolute; opacity: 0; width: 0; height: 0; }
+
+.toggle-track {
+  width: 40px; height: 22px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 11px;
+  transition: background var(--t), border-color var(--t);
+  position: relative;
+}
+.toggle-thumb {
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 16px; height: 16px;
+  background: var(--txt3);
+  border-radius: 50%;
+  transition: transform var(--t), background var(--t);
+}
+
+.toggle-wrap input:checked + .toggle-track {
+  background: var(--amber);
+  border-color: var(--amber);
+}
+.toggle-wrap input:checked + .toggle-track .toggle-thumb {
+  transform: translateX(18px);
+  background: #0B0F1A;
+}
+
+/* ── Create new account ──────────────────────────────────────── */
+.create-opt { color: var(--amber) !important; font-weight: 600; }
+
+.map-row.has-creation { border-left: 3px solid var(--amber); }
+
+.create-badge {
+  display: inline-block; margin-left: 6px;
+  font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  background: var(--amber-bg); color: var(--amber);
+  border: 1px solid rgba(245,158,11,.3); border-radius: 3px; padding: 1px 5px;
+  vertical-align: middle;
+}
+
+.creation-summary {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 4px 0;
+}
+.creation-label { font-size: 12px; font-weight: 600; color: var(--txt1); }
+.creation-cat   { font-size: 12px; font-family: var(--font-mono); }
+
+/* Inline creation form */
+.creation-form {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-top: none;
+  border-radius: 0 0 var(--r) var(--r);
+  animation: fadeIn 150ms ease;
+}
+.creation-form.hidden { display: none; }
+.cf-inner { padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.cf-row   { display: flex; flex-direction: column; gap: 3px; }
+.cf-label { font-size: 12px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--txt2); }
+.cf-type-row.hidden { display: none; }
+.cf-field-row.hidden { display: none; }
+.cf-actions { display: flex; gap: 6px; padding-top: 2px; }
+
+/* Bulk create panel */
+.bulk-create-panel {
+  margin: 0 8px 8px;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  overflow: hidden;
+  animation: fadeIn 150ms ease;
+}
+.bulk-create-panel.hidden { display: none; }
+
+.bulk-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 12px; background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+}
+.bulk-title { font-size: 13px; font-weight: 700; color: var(--amber); }
+.bulk-hint  { padding: 8px 12px; font-size: 11px; color: var(--txt2); }
+
+.bulk-list {
+  max-height: 220px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 0;
+}
+.bulk-row {
+  display: grid;
+  grid-template-columns: 20px 1fr auto auto auto;
+  align-items: center; gap: 6px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border);
+  transition: background var(--t);
+}
+.bulk-row:last-child { border-bottom: none; }
+.bulk-row:hover { background: var(--bg3); }
+.bulk-check { accent-color: var(--amber); cursor: pointer; }
+.bulk-acct-name { font-size: 12px; font-weight: 600; color: var(--txt1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bulk-bal { font-family: var(--font-mono); font-size: 12px; color: var(--txt2); white-space: nowrap; }
+.bulk-type.hidden { display: none; }
+
+.bulk-footer {
+  display: flex; gap: 8px; padding: 10px 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── Merge create sub-form ───────────────────────────────────── */
+.merge-create-form {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  padding: 10px;
+  margin-top: 8px;
+  display: flex; flex-direction: column; gap: 6px;
+  animation: fadeIn 150ms ease;
+}
+.merge-create-form.hidden { display: none; }
+.merge-create-row { display: flex; flex-direction: column; gap: 3px; }
+#mergeCreateTypeRow.hidden { display: none; }
+#mergeCreatePaymentRow.hidden { display: none; }
+
+.field-hint {
+  font-size: 11px; font-weight: 400;
+  color: var(--txt2); margin-left: 4px;
+  font-family: var(--font-mono);
+}
+
+/* Multi-field row: checkbox + name + balance + field select */
+.merge-field-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 10px; cursor: default;
+  transition: background var(--t);
+}
+.merge-field-row .check-item-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.merge-field-row .check-item-bal  { flex-shrink: 0; }
+.merge-field-row:hover { background: var(--bg3); }
+.merge-field-sel { flex-shrink: 0; }
+.merge-field-sel.hidden { display: none; }
+
+
+/* ── Merge tab layout: builder fills full panel when open ────── */
+#panel-merge {
+  display: none; flex-direction: column; flex: 1; overflow-y: auto;
+}
+#panel-merge.active { display: flex; }
+
+/* When the builder is open, collapse the group list and add button */
+#panel-merge.builder-open #mergeGroupList,
+#panel-merge.builder-open > p,
+#panel-merge.builder-open > div:not(#mergeBuilder):not(#budgetMergeBuilder) {
+  display: none;
+}
+#panel-merge.builder-open #mergeBuilder,
+#panel-merge.builder-open #budgetMergeBuilder {
+  margin: 0;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+}
+
+/* ── Fix 4: 3-column aligned layout for multi-field merge card rows ── */
+.merge-card-item--fields {
+  display: grid;
+  grid-template-columns: 1fr 120px 80px;  /* fixed cols → labels always left-align */
+  align-items: center;
+  gap: 6px;
+}
+.merge-field-label {
+  font-size: 12px;
+  color: var(--amber);
+  white-space: nowrap;
+  text-align: left;   /* arrow + text start at same x for every row */
+}
+
+/* Fix 1b: purchase price row hidden rule */
+#mergeCreatePurchaseRow.hidden { display: none; }
+
+/* ── Merge manual override inputs ───────────────────────────── */
+#mergeManualOverrides.hidden { display: none; }
+.merge-override-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+}
+.merge-override-row.hidden { display: none; }
+.merge-override-label {
+  font-size: 11px;
+  color: var(--txt2);
+  font-weight: 600;
+}
+
+/* ── Asset override rows in inline creation form ─────────── */
+.cf-payment-row.hidden  { display: none; }
+.cf-asset-overrides.hidden { display: none; }
+.cf-asset-overrides {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 8px 10px;
+  display: flex; flex-direction: column; gap: 5px;
+}
+.cf-override-row {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  align-items: center;
+  gap: 8px;
+}
+.cf-override-row.hidden { display: none; }
+.cf-override-label {
+  font-size: 11px; font-weight: 600; color: var(--txt2);
+}
+
+/* ── Merge builder select fixes ──────────────────────────────── */
+/* Prevent the PL target select from flex-growing to fill the panel */
+#mergePlTarget {
+  flex: none;
+  width: 100%;
+}
+
+/* merge-create-form inputs should also not flex-grow */
+.merge-create-form .select-input,
+.merge-create-form .text-input {
+  flex: none;
+  width: 100%;
+}
+
+/* ── Save status indicator ───────────────────────────────────── */
+.save-status {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--green);
+  white-space: nowrap;
+}
+
+/* ── Floating save button ────────────────────────────────────── */
+.floating-save-btn {
+  position: sticky;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 20px;
+  background: var(--amber);
+  color: #0B0F1A;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(245,158,11,.4);
+  opacity: 1;
+  transition: opacity 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+  white-space: nowrap;
+  /* Centered using sticky + left:50% + translateX — works inside any scroll container */
+  margin: 8px auto 4px;
+}
+.floating-save-btn:hover {
+  box-shadow: 0 6px 20px rgba(245,158,11,.55);
+  background: #FBBF24;
+}
+.floating-save-btn.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(8px);
+}
+
+/* ── Failed creation error state ─────────────────────────────── */
+.creation-error {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 4px 0;
+}
+.creation-error-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--red);
+}
+.creation-error-msg {
+  font-size: 12px;
+ color: var(--txt2);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+.creation-error-actions {
+  display: flex;
+  gap: 5px;
+  margin-top: 2px;
+}
+
+/* ── CSP warning banner ──────────────────────────────────────── */
+.csp-warning {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin: 8px 16px;
+  padding: 12px;
+  background: rgba(239,68,68,.1);
+  border: 1px solid var(--red);
+  border-radius: var(--r);
+  animation: fadeIn 200ms ease;
+}
+.csp-warning-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  color: var(--red);
+}
+.csp-warning-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--red);
+  margin-bottom: 4px;
+}
+.csp-warning-msg {
+  font-size: 11px;
+  color: var(--txt2);
+  line-height: 1.5;
+}
+
+/* ── Sync legend bar (mirrors mapping-legend) ────────────────── */
+.sync-legend {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 16px;
+  font-size: 11px;
+ color: var(--txt2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  justify-content: space-between;
+}
+.btn-success { background: var(--green); color: #0B0F1A; border-color: var(--green); }
+.btn-success:hover:not(:disabled) { background: #34D399; border-color: #34D399; }
+.btn-success:disabled { opacity: .35; cursor: not-allowed; }
+
+/* ── Floating push button (mirrors floating-save-btn) ────────── */
+.floating-push-btn {
+  position: sticky;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 20px;
+  background: var(--green);
+  color: #0B0F1A;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(16,185,129,.4);
+  opacity: 1;
+  transition: opacity 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+  white-space: nowrap;
+  margin: 8px auto 4px;
+}
+.floating-push-btn:hover:not(:disabled) {
+  box-shadow: 0 6px 20px rgba(16,185,129,.55);
+  background: #34D399;
+}
+.floating-push-btn:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+.floating-push-btn.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(8px);
+}
+
+/* ── Sub-tab bar (inside Mapping panel) ─────────────────────── */
+.sub-tab-bar {
+  display: flex;
+  background: var(--bg0);
+  border-bottom: 2px solid var(--border);
+  flex-shrink: 0;
+}
+.sub-tab {
+  flex: 1;
+  padding: 9px 4px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  color: var(--txt3);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  cursor: pointer;
+  transition: all var(--t);
+}
+.sub-tab:hover { color: var(--txt2); background: var(--bg2); }
+.sub-tab.active { color: var(--blue); border-bottom-color: var(--blue); background: var(--blue-bg); }
+
+/* ── Sub-panels ─────────────────────────────────────────────── */
+.sub-panel { display: none; flex-direction: column; flex: 1; overflow-y: auto; }
+.sub-panel.active { display: flex; }
+
+/* ── Budget mapping rows ─────────────────────────────────────── */
+.budget-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg1);
+  border-radius: var(--r);
+  margin-bottom: 3px;
+}
+.budget-row-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.budget-source-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--txt1);
+  flex: 1;
+}
+.budget-source-amount {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--green);
+}
+.budget-targets {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-left: 12px;
+}
+.budget-target-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--txt2);
+}
+.budget-target-label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.budget-target-plan {
+  font-size: 12px;
+ color: var(--txt2);
+  font-family: var(--font-mono);
+}
+.budget-target-expense {
+  color: var(--blue);
+}
+.budget-target-freq {
+  font-size: 12px;
+ color: var(--txt2);
+  margin-left: 4px;
+}
+.budget-add-row {
+  margin-left: 12px;
+  margin-top: 4px;
+}
+.budget-plan-sel, .budget-expense-sel {
+  font-size: 11px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--txt1);
+  font-family: var(--font-sans);
+  cursor: pointer;
+  appearance: none;
+  padding: 4px 24px 4px 8px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394A3B8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  width: 100%;
+}
+.budget-plan-sel:focus, .budget-expense-sel:focus { border-color: var(--blue); outline: none; }
+
+/* ── Apply-to-plans inline multi-select ─────────────────────── */
+.budget-plan-apply {
+  font-size: 12px;
+  padding: 2px;
+  width: 160px;
+  flex-shrink: 0;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--txt2);
+  font-family: var(--font-sans);
+  cursor: pointer;
+  appearance: none;
+  background-image: none;
+}
+.budget-plan-apply option {
+  padding: 2px 4px;
+}
+.budget-plan-apply:focus { border-color: var(--blue); outline: none; }
+
+/* ── Budget merge row distinction ───────────────────────────── */
+.budget-row--merge {
+  border-left: 3px solid var(--blue);
+}
+.budget-row--merge .budget-source-name {
+  color: var(--blue);
+}
+.budget-source-override {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0 5px 0;
+  flex-wrap: wrap;
+}
+.budget-override-label {
+  font-size: 10px;
+  color: var(--txt3);
+  white-space: nowrap;
+}
+/* Compact sizing for all inline source-override selects/inputs */
+.budget-source-override .select-input,
+.bgt-cat-source-override .select-input {
+  flex: none;
+  width: auto;
+  font-size: 11px;
+  padding: 2px 22px 2px 7px;
+  background-position: right 7px center;
+}
+.budget-source-override .text-input,
+.bgt-cat-source-override .text-input {
+  flex: none;
+  width: 40px;
+  font-size: 11px;
+  padding: 2px 4px;
+  text-align: center;
+}
+.bgt-actual-opts {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+/* Remove number spinner arrows globally — validation enforced via JS change handlers */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+.bgt-actual-opts.hidden {
+  display: none;
+}
+#budgetMergeActualOpts.hidden { display: none !important; }
+/* Merge builder per-category items */
+/* Budget source bar (Settings) */
+.budget-source-bar{
+  display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;
+  padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+}
+.bsb-group{display:flex;flex-direction:column;gap:3px}
+.bsb-label{font-size:10px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em}
+.bsb-select{font-size:12px;padding:5px 24px 5px 8px;min-width:90px}
+.bsb-num{width:44px;text-align:center;font-size:12px;padding:5px 6px}
+.bsb-inline{display:flex;align-items:center;gap:4px}
+.bsb-unit{font-size:11px;color:var(--txt3)}
+#budgetActualOptions.hidden{display:none}
+#budgetAggGroup.hidden{display:none}
+
+.bgt-merge-source-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--txt2);
+  cursor: pointer;
+  margin-top: 4px;
+}
+.bgt-cat-item {
+  display: flex;
+  flex-direction: column;
+}
+.bgt-cat-item .bgt-cat-source-override {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0 5px 22px;
+  flex-wrap: wrap;
+}
+/* Builder-body overrides flex-grow to 100% for .select-input — fight it with higher specificity */
+.builder-body .bgt-cat-source-override .select-input {
+  flex: none;
+  width: auto;
+}
+/* Hide per-row source controls when "apply to all" is active */
+.budget-merge-cat--all-mode .bgt-cat-source-override {
+  display: none;
+}
+
+/* ── Merge tab floating action buttons ──────────────────────── */
+.merge-fab-row {
+  position: sticky;
+  bottom: 12px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  padding: 0 16px;
+  margin: 8px 0 4px;
+  pointer-events: none;
+}
+.merge-fab {
+  pointer-events: all;
+  padding: 9px 18px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  white-space: nowrap;
+  transition: box-shadow var(--t), transform 80ms ease;
+}
+.merge-fab:active { transform: scale(0.97); }
+.merge-fab--account {
+  background: var(--amber);
+  color: #0B0F1A;
+  box-shadow: 0 4px 16px rgba(245,158,11,.4);
+}
+.merge-fab--account:hover { background: #FBBF24; box-shadow: 0 6px 20px rgba(245,158,11,.55); }
+.merge-fab--budget {
+  background: var(--blue);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(59,130,246,.4);
+}
+.merge-fab--budget:hover { background: #60A5FA; box-shadow: 0 6px 20px rgba(59,130,246,.55); }
+
+/* ── Merge type badges ──────────────────────────────────────── */
+.merge-type-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.merge-type-badge--account {
+  background: var(--amber-bg);
+  color: var(--amber);
+  border: 1px solid var(--amber);
+}
+.merge-type-badge--budget {
+  background: var(--blue-bg);
+  color: var(--blue);
+  border: 1px solid var(--blue);
+}
+.merge-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Floating merge buttons hidden state ────────────────────── */
+.merge-fab.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+}
+/* Hide the row itself when both buttons are hidden to avoid phantom space */
+.merge-fab-row:has(.merge-fab.hidden + .merge-fab.hidden) {
+  display: none;
+}
+
+
+
+
+
+/* ── Budget category group headers ──────────────────────────── */
+.budget-group {
+  margin-bottom: 4px;
+}
+.budget-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--txt2);
+  padding: 8px 12px 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+}
+.budget-group-name { flex: 1; }
+.budget-group-src-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--txt3);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.budget-group-src-toggle input[type=checkbox] {
+  accent-color: var(--blue);
+  cursor: pointer;
+  margin: 0;
+}
+.budget-group-src-toggle:has(input:checked) { color: var(--blue); }
+.budget-group-src-inline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.budget-group-src-inline .select-input {
+  flex: none;
+  width: auto;
+  font-size: 11px;
+  padding: 2px 22px 2px 7px;
+  background-position: right 7px center;
+}
+/* When group override is active, hide individual per-row source overrides */
+.budget-group--override .budget-source-override { display: none; }
+/* Collapse button for mapping tab group headers */
+.budget-group-collapse-btn {
+  background: none;
+  border: none;
+  color: var(--txt3);
+  font-size: 13px;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.budget-group-collapse-btn:hover { color: var(--txt1); }
+.budget-group.collapsed .budget-group-body { display: none; }
+/* Checklist group headers (merge builder) */
+.checklist-group-header {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--txt2);
+  padding: 6px 10px 3px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+/* ── Builder body inputs must not flex-grow ─────────────────── */
+.builder-body .text-input,
+.builder-body .select-input {
+  flex: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Budget checklist group header with select-all toggle ────── */
+.checklist-group-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.checklist-group-toggle {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.checklist-group-toggle input[type=checkbox] {
+  accent-color: var(--amber);
+  cursor: pointer;
+  margin: 0;
+}
+.checklist-group-name {
+  flex: 1;
+}
+.group-collapse-btn {
+  background: none;
+  border: none;
+  color: var(--txt3);
+  font-size: 13px;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.group-collapse-btn:hover { color: var(--txt1); }
+.checklist-group.collapsed .checklist-group-items { display: none; }
+/* Group source toggle in merge builder checklist */
+.bgt-cg-src-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--txt3);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.bgt-cg-src-toggle input[type=checkbox] {
+  accent-color: var(--blue);
+  cursor: pointer;
+  margin: 0;
+}
+.bgt-cg-src-toggle:has(input:checked) { color: var(--blue); }
+.bgt-cg-src-inline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.bgt-cg-src-inline .select-input {
+  flex: none;
+  width: auto;
+  font-size: 11px;
+  padding: 2px 22px 2px 7px;
+  background-position: right 7px center;
+}
+/* When group override active, hide per-row source controls for that group */
+.checklist-group.bgt-cg-active .bgt-cat-source-override { display: none; }
+/* When "Apply to all" is active, dim/disable group source toggles */
+.budget-merge-cat--all-mode .bgt-cg-src-toggle { opacity: 0.4; pointer-events: none; }
+.budget-merge-cat--all-mode .bgt-cg-src-controls { display: none; }
+
+/* ── Builder floating bar (total + save) ────────────────────── */
+.builder-floating-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 8px 12px;
+  background: var(--bg3);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  gap: 8px;
+  position: relative;
+  transition: opacity 200ms ease;
+}
+.builder-floating-bar .builder-running-total {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.builder-floating-bar.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ── Budget merge builder: checklists expand fully so builder-body scrolls ── */
+#budgetMergeBuilder .checklist {
+  max-height: none;
+  overflow-y: visible;
+}
+
+/* ── Merge list: scroll container needs defined height ──────── */
+#mergeGroupList {
+  overflow-y: auto;
+}
+
+/* ── Account merge builder: checklist expands fully so builder-body scrolls ── */
+#mergeBuilder .checklist {
+  max-height: none;
+  overflow-y: visible;
+}
+
+/* ── Panel floating bars (mapping, budget, sync) ─────────────── */
+.panel-floating-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 8px 16px;
+  background: var(--bg3);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  transition: opacity 200ms ease;
+}
+.panel-floating-bar.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ── Stale mapping warning ───────────────────────────────────── */
+.stale-warning-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 6px;
+  padding: 7px 10px;
+  background: rgba(245,158,11,.1);
+  border: 1px solid rgba(245,158,11,.35);
+  border-radius: var(--r);
+}
+.stale-warning-row.hidden { display: none; }
+/* Backup & Restore */
+.backup-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.backup-local{display:flex;gap:8px}
+.backup-cloud{display:flex;align-items:center;gap:8px}
+.backup-cloud.hidden{display:none}
+.backup-divider{color:var(--txt3);font-size:14px}
+.backup-status{font-size:11px;color:var(--txt3);white-space:nowrap}
+.cv-name-bar{display:flex;align-items:center;gap:6px;margin-top:8px}
+.cv-name-bar.hidden{display:none}
+.cv-name-input{flex:1;font-size:12px;padding:5px 8px}
+.cloud-version-list{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.cloud-version-list.hidden{display:none}
+.cv-row{display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);font-size:11px}
+.cv-row.pinned{border-left:2px solid var(--amber)}
+.cv-name{flex:1;min-width:0;color:var(--txt1);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cv-date{color:var(--txt3);white-space:nowrap;font-size:10px}
+.cv-actions{display:flex;gap:4px;flex-shrink:0}
+.cv-btn{background:none;border:none;cursor:pointer;font-size:12px;padding:2px 4px;border-radius:3px;color:var(--txt3);transition:color .15s}
+.cv-btn:hover{color:var(--txt1)}
+.cv-btn.pin-btn{transition:transform .15s}
+.cv-btn.pin-btn:not(.pin-active){transform:rotate(0deg)}
+.cv-btn.pin-active{transform:rotate(-45deg)}
+.cv-btn.restore:hover{color:var(--green)}
+.cv-btn.delete:hover{color:var(--red)}
+
+/* MFA bar */
+.mfa-bar{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+}
+.mfa-bar-toggle{flex-shrink:0}
+.mfa-bar-secret{
+  display:flex;align-items:center;gap:4px;flex:1;min-width:0;
+  opacity:0;max-width:0;overflow:hidden;
+  transition:opacity 200ms ease,max-width 200ms ease;
+}
+.mfa-bar-secret.active{opacity:1;max-width:300px}
+.mfa-bar-input{font-size:12px;padding:5px 8px;flex:1;min-width:0}
+.mfa-bar-refresh{
+  flex-shrink:0;
+  opacity:0;max-width:0;overflow:hidden;white-space:nowrap;
+  transition:opacity 200ms ease,max-width 200ms ease;
+}
+.mfa-bar-refresh.active{opacity:1;max-width:140px}
+.mfa-bar-status{font-size:11px;color:var(--txt3);white-space:nowrap}
+#mfaCodeRow.hidden { display: none; }
+#firebaseAuthSection.hidden { display: none; }
+#firebaseAuthDivider.hidden { display: none; }
+#firebaseAccountRow.hidden { display: none; }
+#monarchUrlSection.hidden { display: none; }
+#accountChipWrap.hidden { display: none; }
+.account-dropdown.hidden { display: none; }
+.firebase-auth-banner.hidden { display: none; }
+.stale-warning-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--amber);
+}
+
+/* ── Confirmation modal ──────────────────────────────────────── */
+.confirm-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+.confirm-modal.hidden { display: none; }
+.confirm-modal-box {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 18px 20px;
+  max-width: 340px;
+  width: calc(100% - 40px);
+  box-shadow: 0 8px 32px rgba(0,0,0,.5);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.confirm-modal-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--txt1);
+}
+.confirm-modal-body {
+  font-size: 13px;
+  color: var(--txt2);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.confirm-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* ── Budget sync check badge ─────────────────────────────────── */
+.sync-check-badge {
+  display: inline-block;
+  margin-left: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--green);
+  cursor: default;
+}

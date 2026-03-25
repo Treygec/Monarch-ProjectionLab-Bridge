@@ -1,0 +1,16 @@
+{
+  "functions": {
+    "source": "functions",
+    "runtime": "python313",
+    "ignore": [
+      "venv",
+      ".venv",
+      "*.pyc",
+      "__pycache__"
+    ]
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}

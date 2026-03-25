@@ -1,0 +1,7 @@
+services:
+  monarch-api:
+    build: .
+    container_name: monarch-api
+    ports:
+      - "47821:47821"
+    restart: unless-stopped
