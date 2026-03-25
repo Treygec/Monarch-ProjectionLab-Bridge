@@ -70,7 +70,7 @@ The extension interacts with the following third-party services:
 ## Open Source
 
 This extension is open source. You can review the complete source code to verify these privacy practices:
-https://github.com/treycorple/Monarch-ProjectionLabs-Bridge
+https://github.com/Treygec/Monarch-ProjectionLab-Bridge
 
 ## Contact
 
