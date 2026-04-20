@@ -48,6 +48,8 @@ Before anything is written, review every value that will be pushed. Account item
 
 ## Two Ways to Run
 
+Install the Chrome extension from [here](https://chromewebstore.google.com/detail/nocmpjoeohfhlkolmiomjcdnhmgmohop?utm_source=item-share-cb)
+
 ### Option 1 — Self-Hosted (free, runs locally)
 
 Run a lightweight Python proxy on your own machine. Your Monarch credentials stay local and are sent only to Monarch's API — never to any third-party server.
