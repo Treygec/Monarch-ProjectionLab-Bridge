@@ -11,6 +11,7 @@ const S = {
   plAccounts:       [],  // [{id, name, category, writeField, balance, ...}]
   mappings:         {},  // monarchId → {plId, plRealId, plField}
   pendingCreations: {},  // monarchId → {name, balance, plCategory, plType, monarchId}
+  splitMappings:    {},  // monarchId → [{ plId, plRealId, plField, percentage, pendingCreate? }]
   mergeGroups:      [],  // [{id, plId, plRealId, plField, monarchIds}]
   monarchBudgets:   [],  // [{categoryId, categoryName, groupName, monthlyAmount}]
   plExpenses:       [],  // [{planId, planName, expenseId, expenseName, amount, frequency}]
@@ -259,7 +260,7 @@ async function loadFromStorage() {
     keys: ['plApiKey','monarchEmail','monarchPassword','monarchSessionToken','monarchApiUrl',
            'connectionMode','firebaseEmail','firebaseIdToken','firebaseRefreshToken','firebaseTokenExpiry',
            'monarchAccounts','plAccounts',
-           'mappings','pendingCreations','mergeGroups','settings',
+           'mappings','pendingCreations','splitMappings','mergeGroups','settings',
            'monarchBudgets','plExpenses','budgetMappings','budgetMergeGroups',
            'budgetSourceOverrides','budgetGroupSourceOverrides'],
   });
@@ -277,6 +278,7 @@ async function loadFromStorage() {
   if (d.plAccounts)        S.plAccounts        = d.plAccounts;
   if (d.mappings)          S.mappings          = d.mappings;
   if (d.pendingCreations)  S.pendingCreations  = d.pendingCreations;
+  if (d.splitMappings)     S.splitMappings     = d.splitMappings;
   if (d.mergeGroups)       S.mergeGroups       = d.mergeGroups;
   if (d.settings)          S.settings          = { ...S.settings, ...d.settings };
   if (d.monarchBudgets)    S.monarchBudgets    = d.monarchBudgets;
@@ -301,6 +303,7 @@ async function save() {
     connectionMode: S.connectionMode,
     monarchAccounts: S.monarchAccounts, plAccounts: S.plAccounts,
     mappings: S.mappings, pendingCreations: S.pendingCreations,
+    splitMappings: S.splitMappings,
     mergeGroups: S.mergeGroups, settings: S.settings,
     monarchBudgets: S.monarchBudgets, plExpenses: S.plExpenses,
     budgetMappings: S.budgetMappings,
@@ -541,6 +544,7 @@ function setupSetup() {
     let pruned = 0;
     for (const id of Object.keys(S.pendingCreations)) { if (!currentIds.has(id)) { delete S.pendingCreations[id]; pruned++; } }
     for (const id of Object.keys(S.mappings)) { if (!currentIds.has(id)) { delete S.mappings[id]; pruned++; } }
+    for (const id of Object.keys(S.splitMappings)) { if (!currentIds.has(id)) { delete S.splitMappings[id]; pruned++; } }
     for (const g of S.mergeGroups) {
       const before = g.monarchIds.length;
       g.monarchIds = g.monarchIds.filter(id => currentIds.has(id));
@@ -732,6 +736,12 @@ function detectStaleMappings() {
   for (const [, m] of Object.entries(S.mappings)) {
     if (m?.plRealId && !validPlRealIds.has(m.plRealId)) stale++;
   }
+  // Split mappings
+  for (const targets of Object.values(S.splitMappings)) {
+    for (const sp of targets) {
+      if (sp.plRealId && !validPlRealIds.has(sp.plRealId)) stale++;
+    }
+  }
   // Merge groups (non-pending)
   for (const g of S.mergeGroups) {
     if (g.plRealId && !g.pendingCreate && !validPlRealIds.has(g.plRealId)) stale++;
@@ -771,6 +781,15 @@ function clearStaleMappings() {
     if (m?.plRealId && !validPlRealIds.has(m.plRealId)) {
       delete S.mappings[monarchId]; removed++;
     }
+  }
+  // Split mappings — remove stale targets, drop split if all targets are stale
+  for (const [monarchId, targets] of Object.entries(S.splitMappings)) {
+    const before = targets.length;
+    S.splitMappings[monarchId] = targets.filter(sp =>
+      !sp.plRealId || validPlRealIds.has(sp.plRealId)
+    );
+    removed += before - S.splitMappings[monarchId].length;
+    if (!S.splitMappings[monarchId].length) delete S.splitMappings[monarchId];
   }
   // Merge groups
   for (const g of S.mergeGroups) {
@@ -1047,6 +1066,7 @@ function setupMapping() {
 function buildPlOptionHTML(selectedId, showAssetSubtypes = true) {
   let html = '<option value="">— unmapped —</option>';
   html += `<option value="__CREATE_NEW__" class="create-opt">✦ Create new PL account…</option>`;
+  html += `<option value="__SPLIT__" class="create-opt">⊞ Split into multiple PL accounts…</option>`;
 
   if (!S.plAccounts.length) return html;
 
@@ -1078,7 +1098,7 @@ function buildPlOptionHTML(selectedId, showAssetSubtypes = true) {
 function updateCreateAllBtn() {
   const mergedIds = new Set(S.mergeGroups.flatMap(g => g.monarchIds));
   const unmappedCount = visibleMonarchAccounts().filter(a =>
-    !S.mappings[a.id] && !mergedIds.has(a.id) && !S.pendingCreations[a.id]
+    !S.mappings[a.id] && !mergedIds.has(a.id) && !S.pendingCreations[a.id] && !S.splitMappings[a.id]
   ).length;
   const btn = byId('createAllBtn');
   btn.textContent = `✦ Create all unmapped (${unmappedCount})`;
@@ -1114,17 +1134,34 @@ function renderMapping() {
       ? `<span class="create-badge">${CATEGORY_LABELS[creation.plCategory] || creation.plCategory}</span>`
       : '';
 
+    // If this account has a split mapping, show the split badge
+    const hasSplit = !!S.splitMappings[a.id];
+    const splitBadge = hasSplit
+      ? `<span class="create-badge" style="background:var(--blue);color:#fff">split</span>`
+      : '';
+
     return `
-      <div class="map-row ${isMerged ? 'merged' : ''} ${creation ? 'has-creation' : ''}"
+      <div class="map-row ${isMerged ? 'merged' : ''} ${creation ? 'has-creation' : ''} ${hasSplit ? 'has-split' : ''}"
            data-monarch-id="${a.id}">
         <div class="map-source">
-          <div class="map-source-name">${esc(a.name)}${creationBadge}</div>
+          <div class="map-source-name">${esc(a.name)}${creationBadge}${splitBadge}</div>
           <div class="map-source-bal">${fmt(a.balance)}${isMerged ? ' · <span style="color:var(--amber)">in merge</span>' : ''}
           </div>
         </div>
         <div class="map-arrow">→</div>
         <div class="map-dest">
           ${(() => {
+            if (hasSplit) {
+              const splits = S.splitMappings[a.id];
+              const rows = splits.map((sp, i) => {
+                const plAcct = S.plAccounts.find(p => p.id === sp.plId);
+                const label = plAcct ? (plAcct.subLabel ? `${plAcct.name} → ${plAcct.subLabel}` : plAcct.name) : (sp.pendingCreate ? `New: ${sp.pendingCreate.name}` : sp.plId);
+                const pct = sp.percentage || 0;
+                const amt = (a.balance || 0) * pct / 100;
+                return `<div class="split-row-display" style="font-size:11px;padding:2px 0;color:var(--blue)">${esc(label)} · ${pct}% (${fmt(amt)})</div>`;
+              }).join('');
+              return `<div style="cursor:pointer" data-split-edit-mid="${a.id}">${rows}<div style="font-size:12px;color:var(--txt2)">click to edit split</div></div>`;
+            }
             if (creation) {
               const wfLabels = {amount:'Current Value',balance:'Loan Balance',initialValue:'Purchase Price'};
               if (creation.failedAt) {
@@ -1165,7 +1202,9 @@ function renderMapping() {
         </div>
         ${isMerged
           ? '<span class="map-info-icon" title="This account is managed from the Merge tab">ⓘ</span>'
-          : `<button class="map-remove" data-monarch-id="${a.id}" title="Clear">✕</button>`
+          : hasSplit
+            ? `<button class="map-remove" data-monarch-id="${a.id}" data-split-clear="1" title="Clear split">✕</button>`
+            : `<button class="map-remove" data-monarch-id="${a.id}" title="Clear">✕</button>`
         }
       </div>
       <!-- inline creation form placeholder -->
@@ -1197,6 +1236,11 @@ function setupMappingListDelegation() {
         showCreationForm(mid);
         return;
       }
+      if (sel.value === '__SPLIT__') {
+        sel.value = '';
+        showSplitForm(mid);
+        return;
+      }
       const plId = sel.value;
       if (plId) {
         const { realId, field } = resolvePlMapping(plId);
@@ -1218,12 +1262,42 @@ function setupMappingListDelegation() {
       const formEl = e.target.closest('.creation-form');
       if (formEl) syncOverrideRows(formEl);
     }
+
+    // Split percentage input — update live total and per-row amount display
+    if (e.target.classList.contains('sf-pct-input')) {
+      const formEl = e.target.closest('.creation-form');
+      if (!formEl) return;
+      const a = S.monarchAccounts.find(ac => ac.id === formEl.id.replace('creation-form-', ''));
+      const balance = a?.balance || 0;
+      // Update this row's amount display
+      const row = e.target.closest('.sf-target-row');
+      if (row) {
+        const amtSpan = row.querySelector('span[style*="min-width"]');
+        if (amtSpan) {
+          const pct = parseFloat(e.target.value) || 0;
+          amtSpan.textContent = fmt(balance * pct / 100);
+        }
+      }
+      // Update total
+      const allPcts = formEl.querySelectorAll('.sf-pct-input');
+      let total = 0;
+      allPcts.forEach(inp => { total += parseFloat(inp.value) || 0; });
+      const totalEl = formEl.querySelector('.sf-total-pct');
+      if (totalEl) {
+        totalEl.textContent = String(Math.round(total * 10) / 10);
+        totalEl.style.color = Math.abs(total - 100) > 0.5 ? 'var(--red)' : 'var(--green)';
+      }
+    }
   });
 
   list.addEventListener('click', async e => {
     // Edit creation summary → reopen form
     const summary = e.target.closest('.creation-summary[data-edit-mid]');
     if (summary) { showCreationForm(summary.dataset.editMid); return; }
+
+    // Edit split mapping → reopen split form
+    const splitEdit = e.target.closest('[data-split-edit-mid]');
+    if (splitEdit) { showSplitForm(splitEdit.dataset.splitEditMid); return; }
 
     // Retry failed creation
     const retry = e.target.closest('.creation-retry');
@@ -1247,11 +1321,16 @@ function setupMappingListDelegation() {
       return;
     }
 
-    // Remove mapping
+    // Remove mapping (also clears split if data-split-clear is set)
     const remove = e.target.closest('.map-remove');
     if (remove) {
-      delete S.mappings[remove.dataset.monarchId];
-      delete S.pendingCreations[remove.dataset.monarchId];
+      const mid = remove.dataset.monarchId;
+      if (remove.dataset.splitClear) {
+        delete S.splitMappings[mid];
+      } else {
+        delete S.mappings[mid];
+        delete S.pendingCreations[mid];
+      }
       renderMapping();
       return;
     }
@@ -1268,6 +1347,35 @@ function setupMappingListDelegation() {
     if (cfCancel) {
       const formEl = cfCancel.closest('.creation-form');
       if (formEl) { formEl.classList.add('hidden'); renderMapping(); }
+      return;
+    }
+
+    // Save / cancel inline split form buttons
+    const sfSave = e.target.closest('.sf-save');
+    if (sfSave) {
+      const formEl = sfSave.closest('.creation-form');
+      const monarchId = formEl?.id?.replace('creation-form-', '');
+      if (monarchId && formEl) saveSplitForm(monarchId, formEl);
+      return;
+    }
+    const sfCancel = e.target.closest('.sf-cancel');
+    if (sfCancel) {
+      const formEl = sfCancel.closest('.creation-form');
+      if (formEl) { formEl.classList.add('hidden'); renderMapping(); }
+      return;
+    }
+
+    // Add / remove split target rows
+    const sfAddRow = e.target.closest('.sf-add-row');
+    if (sfAddRow) {
+      const formEl = sfAddRow.closest('.creation-form');
+      if (formEl) addSplitRow(formEl);
+      return;
+    }
+    const sfRemoveRow = e.target.closest('.sf-remove-row');
+    if (sfRemoveRow) {
+      const row = sfRemoveRow.closest('.sf-target-row');
+      if (row) row.remove();
       return;
     }
   });
@@ -1511,6 +1619,130 @@ function saveCreationForm(monarchId, formEl) {
   delete S.mappings[monarchId];
   renderMapping();
   toast(`"${name}" queued for creation`, 'ok');
+}
+
+// ── Inline split form ────────────────────────────────────────
+// Lets a user split one Monarch account into multiple PL accounts by percentage.
+function showSplitForm(monarchId, closeOthers = true) {
+  if (closeOthers) {
+    document.querySelectorAll('.creation-form:not(.hidden)').forEach(f => f.classList.add('hidden'));
+  }
+
+  const a = S.monarchAccounts.find(ac => ac.id === monarchId);
+  if (!a) return;
+  const formEl = byId(`creation-form-${monarchId}`);
+  if (!formEl) return;
+
+  const existing = S.splitMappings[monarchId] || [];
+  formEl.innerHTML = buildSplitFormHTML(monarchId, a, existing);
+  formEl.classList.remove('hidden');
+}
+
+function buildSplitFormHTML(monarchId, a, existingSplits) {
+  const balance = a.balance || 0;
+
+  // If no existing splits, start with 2 empty rows
+  const splits = existingSplits.length ? existingSplits : [
+    { plId: '', plRealId: '', plField: '', percentage: 50, pendingCreate: null },
+    { plId: '', plRealId: '', plField: '', percentage: 50, pendingCreate: null },
+  ];
+
+  const rowsHtml = splits.map((sp, i) => buildSplitTargetRowHTML(sp, i, balance)).join('');
+
+  return `
+    <div class="cf-inner">
+      <div class="cf-label" style="margin-bottom:6px">
+        Split <strong>${esc(a.name)}</strong> (${fmt(balance)}) into multiple PL accounts
+      </div>
+      <div class="cf-label" style="margin-bottom:4px;font-size:12px;color:var(--txt2)">
+        Each target can map to an existing PL account or create a new one. Percentages must sum to 100%.
+      </div>
+      <div class="sf-targets">${rowsHtml}</div>
+      <div class="cf-row" style="margin-top:4px">
+        <button class="btn btn-ghost btn-sm sf-add-row">+ Add target</button>
+        <span class="sf-total-label" style="font-size:12px;margin-left:8px">Total: <span class="sf-total-pct">100</span>%</span>
+      </div>
+      <div class="cf-actions">
+        <button class="btn btn-primary btn-sm sf-save">Save Split</button>
+        <button class="btn btn-ghost btn-sm sf-cancel">Cancel</button>
+      </div>
+    </div>`;
+}
+
+function buildSplitTargetRowHTML(sp, index, balance) {
+  const plId = sp.plId || '';
+  const pct = sp.percentage || 0;
+  const amt = balance * pct / 100;
+
+  return `
+    <div class="sf-target-row" style="display:flex;align-items:center;gap:6px;margin-bottom:4px;padding:4px;background:var(--bg2);border-radius:4px">
+      <select class="select-input sf-pl-select" style="font-size:11px;padding:4px 24px 4px 8px;flex:1" data-index="${index}">
+        ${buildPlOptionHTML(plId)}
+      </select>
+      <input type="number" class="text-input sf-pct-input" value="${pct}" min="0" max="100" step="1"
+        style="font-size:11px;padding:4px 6px;width:60px;text-align:right" data-index="${index}" title="Percentage of balance"/>
+      <span style="font-size:11px;color:var(--txt2);min-width:60px">${fmt(amt)}</span>
+      ${index >= 2 ? '<button class="btn btn-ghost btn-sm sf-remove-row" style="padding:2px 6px">✕</button>' : ''}
+    </div>`;
+}
+
+function addSplitRow(formEl) {
+  const container = formEl.querySelector('.sf-targets');
+  if (!container) return;
+  const a = S.monarchAccounts.find(ac => ac.id === formEl.id.replace('creation-form-', ''));
+  const balance = a?.balance || 0;
+  const index = container.querySelectorAll('.sf-target-row').length;
+  const div = document.createElement('div');
+  div.innerHTML = buildSplitTargetRowHTML({ plId: '', plRealId: '', plField: '', percentage: 0 }, index, balance);
+  container.appendChild(div.firstElementChild);
+}
+
+function saveSplitForm(monarchId, formEl) {
+  const a = S.monarchAccounts.find(ac => ac.id === monarchId);
+  if (!a) return;
+  const balance = a.balance || 0;
+
+  const rowEls = formEl.querySelectorAll('.sf-target-row');
+  const targets = [];
+  let totalPct = 0;
+
+  for (const rowEl of rowEls) {
+    const sel = rowEl.querySelector('.sf-pl-select');
+    const pctInput = rowEl.querySelector('.sf-pct-input');
+    const plId = sel.value;
+    const pct = parseFloat(pctInput.value) || 0;
+
+    if (!plId || plId === '__CREATE_NEW__' || plId === '__SPLIT__') {
+      // For now, only existing PL accounts are supported in splits.
+      // Create-new in splits can be a future enhancement.
+      if (plId === '__CREATE_NEW__') {
+        toast('Creating new accounts in splits is not yet supported — select an existing PL account', 'err');
+        return;
+      }
+      continue;
+    }
+
+    const { realId, field } = resolvePlMapping(plId);
+    totalPct += pct;
+    targets.push({ plId, plRealId: realId, plField: field, percentage: pct });
+  }
+
+  if (targets.length < 2) {
+    toast('At least 2 targets are required for a split', 'err');
+    return;
+  }
+
+  if (Math.abs(totalPct - 100) > 0.5) {
+    toast(`Percentages must sum to 100% (currently ${totalPct}%)`, 'err');
+    return;
+  }
+
+  S.splitMappings[monarchId] = targets;
+  delete S.mappings[monarchId];
+  delete S.pendingCreations[monarchId];
+  formEl.classList.add('hidden');
+  renderMapping();
+  toast(`Split saved: ${targets.length} targets`, 'ok');
 }
 
 // ── Auto-map ──────────────────────────────────────────────────
@@ -3516,14 +3748,35 @@ function buildSyncPlan() {
     }
   }
 
-  // 3. One-to-one mappings
+  // 3. Split mappings — one Monarch account → multiple PL accounts by percentage
+  for (const [monarchId, targets] of Object.entries(S.splitMappings)) {
+    if (mergedIds.has(monarchId) || !targets?.length) continue;
+    const ma = S.monarchAccounts.find(a => a.id === monarchId);
+    if (!ma) continue;
+    for (const sp of targets) {
+      if (!sp.plId) continue;
+      const plAcct = S.plAccounts.find(p => p.id === sp.plId);
+      const plLabel = plAcct ? (plAcct.subLabel ? `${plAcct.name} → ${plAcct.subLabel}` : plAcct.name) : sp.plRealId;
+      const correctedField = correctPlField(sp.plId, sp.plField);
+      const pct = sp.percentage || 0;
+      const writeAmount = (ma.balance || 0) * pct / 100;
+      syncPlan.push({
+        type: 'single', plRealId: sp.plRealId, plField: correctedField, plLabel,
+        plCategory: plAcct?.category || null,
+        monarchNames: [`${ma.name} (${pct}%)`], writeAmount, status: 'pending',
+        isSplit: true, splitPercentage: pct,
+      });
+    }
+  }
+
+  // 3b. One-to-one mappings
   for (const [monarchId, mapping] of Object.entries(S.mappings)) {
     if (mergedIds.has(monarchId) || !mapping?.plId) continue;
     const ma     = S.monarchAccounts.find(a => a.id === monarchId);
     const plAcct = S.plAccounts.find(p => p.id === mapping.plId);
     if (!ma) continue;
     const plLabel = plAcct ? (plAcct.subLabel ? `${plAcct.name} → ${plAcct.subLabel}` : plAcct.name) : mapping.plRealId;
-    const correctedField = correctPlField(mapping.plRealId, mapping.plField);
+    const correctedField = correctPlField(mapping.plId, mapping.plField);
     syncPlan.push({
       type: 'single', plRealId: mapping.plRealId, plField: correctedField, plLabel,
       plCategory: plAcct?.category || null,
