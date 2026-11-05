@@ -1005,11 +1005,20 @@ function resolvePlMapping(plId) {
 
 // Re-resolve the correct write field for a saved mapping against current S.plAccounts.
 // Corrects stale mappings that were saved with the wrong plField (e.g. 'balance' for a debt).
+// IMPORTANT: pass the FULL plId (with __balance/__initialValue suffix) so synthetic asset
+// sub-entries are detected. For asset accounts, preserve the user's stored field choice
+// since assets legitimately have multiple write-field options (Current Value / Loan Balance / Purchase Price).
 function correctPlField(plId, storedField) {
   if (plId.endsWith('__balance'))      return 'balance';
   if (plId.endsWith('__initialValue')) return 'initialValue';
   const acct = S.plAccounts.find(a => a.id === plId);
-  if (acct) return acct.writeField;  // always trust live PL account data over stored value
+  if (acct) {
+    // Assets have multiple valid write fields (amount/balance/initialValue) — never
+    // override the user's explicit choice. Non-asset accounts have a deterministic
+    // write field, so trust live PL data to correct stale mappings.
+    if (acct.category === 'asset') return storedField || acct.writeField;
+    return acct.writeField;
+  }
   return storedField;                // fall back to stored if PL not loaded
 }
 
@@ -3507,7 +3516,7 @@ function buildSyncPlan() {
       const total   = sources.reduce((s, a) => s + (a.balance || 0), 0);
       const plAcct  = S.plAccounts.find(p => p.id === g.plId);
       const plLabel = plAcct ? (plAcct.subLabel ? `${plAcct.name} → ${plAcct.subLabel}` : plAcct.name) : g.plRealId;
-      const mergeField = correctPlField(g.plRealId, g.plField);
+      const mergeField = correctPlField(g.plId, g.plField);
       syncPlan.push({
         type: 'merge', plRealId: g.plRealId, plField: mergeField, plLabel,
         plCategory: plAcct?.category || null,
@@ -3523,7 +3532,7 @@ function buildSyncPlan() {
     const plAcct = S.plAccounts.find(p => p.id === mapping.plId);
     if (!ma) continue;
     const plLabel = plAcct ? (plAcct.subLabel ? `${plAcct.name} → ${plAcct.subLabel}` : plAcct.name) : mapping.plRealId;
-    const correctedField = correctPlField(mapping.plRealId, mapping.plField);
+    const correctedField = correctPlField(mapping.plId, mapping.plField);
     syncPlan.push({
       type: 'single', plRealId: mapping.plRealId, plField: correctedField, plLabel,
       plCategory: plAcct?.category || null,
